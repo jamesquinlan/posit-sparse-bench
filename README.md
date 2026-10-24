@@ -22,7 +22,7 @@ Co-author James Quinlan independently replicated the non-transfer and TOST equiv
 ## Methodology
 
 - CG solver: Jacobi-preconditioned, 300-2000 iterations depending on experiment
-- Quire config: quire<N,ES,2> (482-bit for posit32), es=2 uniformly per the 2022 Posit Standard
+- Quire config: quire<N,ES,2> (482-bit for posit32) in the original experiments; the v1.1.0 revision runs (`*_q512`) use the 512-bit quire<32,2,32>. es=2 uniformly per the 2022 Posit Standard
 - Ground truth: posit64, cross-validated against double64
 - 13 matrices tested; unsymmetric and artificially-preconditioned matrices excluded as CG-invalid
 
@@ -49,3 +49,20 @@ Prof. John Gustafson (ASU, posit inventor) for the es=2 standard correction and 
 
 - docs/results.md — full 13-matrix result tables matching the paper's Tables 1-8
 - docs/methodology.md — accumulation-site design, metric definitions
+
+## v1.1.0 additions (camera-ready revision runs)
+- `results/refinement_noquire/`: refinement baseline with a plain posit32 residual (6 matrices x 20 seeds; some seeds were run on collaborators' machines).
+- `results/refinement_q512/`: the same refinement with the 512-bit quire residual.
+- `results/exactb_q512/`: refinement with b formed by a single quire rounding.
+- `results/maxn_all/`: nasa4704 run for n iterations (20 seeds, plus cross-check copies from other machines).
+- `results/newmat_q512/`: 7 additional matrices, 25 seeds, 512-bit quire.
+- `revision/`: scripts, tables and figures for the reviewer-response analysis.
+- Matrices come from the SuiteSparse collection.
+
+## Table 10: quire matvec (Site 3), 512-bit quire
+One source file builds both arms (seeds 1-20, posit32, quire inner products in both):
+
+    g++ -std=c++20 -O2 -I../universal/include -o cg_q512_plainmv -DPLAIN_MV src/cg_compare_seeded_q512_qmv.cpp -lm   # plain posit32 matvec
+    g++ -std=c++20 -O2 -I../universal/include -o cg_q512_qmv src/cg_compare_seeded_q512_qmv.cpp -lm                 # quire matvec: one 512-bit quire per row, rounded once to posit32
+
+Run with `./run_table10.sh <binary> <qmv|plainmv> 20`; logs in results/table10_q512/, ratios via `python3 agg_table10.py`.
